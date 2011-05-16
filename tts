@@ -1,0 +1,44 @@
+#!/bin/bash
+# Copyright (c) 2011 Etienne Millon <etienne.millon@gmail.com>
+# ----------------------------------------------------------------------------
+#                        "THE BEER-WARE LICENSE"
+# <etienne.millon@gmail.com> wrote this file. As long as you retain this notice
+# you can do whatever you want with this stuff. If we meet some day, and you
+# think this stuff is worth it, you can buy me a beer in return.
+# ----------------------------------------------------------------------------
+
+CONFIGFILE=$HOME/.ttsrc
+source "$CONFIGFILE"
+
+E_OPTERROR=85
+
+usage()
+{
+  progname=`basename $0`
+  echo "$progname [-v name] 'sentence'"
+  exit $E_OPTERROR
+}
+
+# Check that the configuration is fine
+[ -n "$TTS_SERV" ] || usage
+
+opt_voice=arnaud
+
+while getopts "v:" Option
+do
+  case $Option in
+    v ) opt_voice="$OPTARG";;
+    * ) usage;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+temp=$(tempfile -p tts -s .wav)
+
+txt=$1
+curl -v "$TTS_SERV" \
+  -d voice=$opt_voice \
+  --data-urlencode txt="$txt" \
+  -d speakButton=SPEAK -L > "$temp"
+mplayer "$temp"
+rm "$temp"
